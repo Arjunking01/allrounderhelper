@@ -1,0 +1,63 @@
+// Vercel Edge Function — POST /api/ai/openrouter
+// Proxies chat requests to OpenRouter's OpenAI-compatible API. OPENROUTER_API_KEY is read
+// from the server environment only; it is never sent to or readable by the browser. The
+// client sends the same OpenAI-style body it always built and we forward it with the real
+// Bearer token attached, streaming the response straight through unchanged.
+//
+// Previously this provider ran in 'direct' mode (browser calls OpenRouter directly using a
+// VITE_OPENROUTER_API_KEY) on the theory that OpenRouter's docs support client-side keys.
+// That still exposes a real, spendable secret in the built JS bundle for every visitor to
+// read — Vite statically inlines any VITE_*-prefixed variable into client code, which is
+// exactly what Vite's own docs warn never to do with sensitive values. Moved to the same
+// server-proxy pattern as every other provider here so no OpenRouter secret ever reaches
+// the browser, regardless of what any single vendor's docs say is technically supported.
+
+import { readJsonWithSizeLimit } from '../_shared';
+
+export const config = { runtime: 'edge' };
+
+function json(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+}
+
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method !== 'POST') return json({ error: { message: 'Method not allowed.' } }, 405);
+
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return json({ error: { message: 'OPENROUTER_API_KEY is not set on the server.' } }, 503);
+
+  const parsed = await readJsonWithSizeLimit(req);
+  if (!parsed.ok) return json({ error: { message: parsed.message } }, parsed.status);
+  const payload = parsed.data;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55_000);
+
+  try {
+    const upstream = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        // OpenRouter-specific attribution headers (optional per their docs, not secrets) —
+        // helps requests show up correctly in OpenRouter's own dashboard/rankings.
+        'HTTP-Referer': 'https://allrounderhelper.vercel.app',
+        'X-Title': 'ALLROUNDER HELPER',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers: { 'Content-Type': upstream.headers.get('Content-Type') ?? 'application/json' },
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      return json({ error: { message: 'OpenRouter request timed out.' } }, 504);
+    }
+    return json({ error: { message: 'Could not reach OpenRouter.' } }, 502);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
