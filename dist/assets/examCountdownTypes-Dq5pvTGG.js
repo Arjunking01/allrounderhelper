@@ -1,1 +1,0 @@
-function e(e){let t=new Date(e).getTime()-Date.now();return Math.ceil(t/864e5)}export{e as t};
