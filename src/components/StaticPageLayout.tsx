@@ -8,10 +8,12 @@ interface Props {
   description: string;
   path: string;
   showLogo?: boolean;
+  /** `full` shows the complete lockup with wordmark (large brand page); default is the compact emblem. */
+  logoVariant?: 'mark' | 'full';
   children: ReactNode;
 }
 
-export function StaticPageLayout({ title, description, path, showLogo = false, children }: Props) {
+export function StaticPageLayout({ title, description, path, showLogo = false, logoVariant = 'mark', children }: Props) {
   return (
     <div className="noise-bg">
       <Seo title={title} description={description} path={path} jsonLd={breadcrumbJsonLd([{ label: title }], SITE_URL)} />
@@ -19,7 +21,7 @@ export function StaticPageLayout({ title, description, path, showLogo = false, c
         <Breadcrumbs items={[{ label: title }]} />
       </div>
       <div className="mx-auto max-w-3xl px-4 sm:px-6 py-12">
-        {showLogo && <Logo size={56} className="mb-6" />}
+        {showLogo && <Logo variant={logoVariant} size={logoVariant === 'full' ? 160 : 56} className="mb-6" />}
         <h1 className="text-3xl sm:text-4xl font-semibold mb-8">{title}</h1>
         <div className="prose-content space-y-6 text-navy-600 dark:text-ink-300 leading-relaxed">
           {children}

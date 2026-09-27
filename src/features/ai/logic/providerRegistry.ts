@@ -9,6 +9,7 @@ import { openAIProvider } from '../providers/OpenAIProvider';
 import { xaiProvider } from '../providers/XaiProvider';
 import { zaiProvider } from '../providers/ZaiProvider';
 import { cloudflareProvider } from '../providers/CloudflareProvider';
+import { vercelGatewayProvider } from '../providers/VercelGatewayProvider';
 
 /**
  * The only provider that never calls a real model — it honestly reports that no AI
@@ -33,7 +34,7 @@ const noneProvider: AIProvider = {
 };
 
 const registry = new Map<string, AIProvider>();
-[noneProvider, geminiProvider, cerebrasProvider, mistralProvider, openRouterProvider, openAIProvider, xaiProvider, zaiProvider, cloudflareProvider].forEach((p) => registry.set(p.id, p));
+[noneProvider, vercelGatewayProvider, geminiProvider, cerebrasProvider, mistralProvider, openRouterProvider, openAIProvider, xaiProvider, zaiProvider, cloudflareProvider].forEach((p) => registry.set(p.id, p));
 
 /** Registers a provider implementation. Call this to add another provider without touching the rest of the app. */
 export function registerProvider(provider: AIProvider) {
@@ -50,7 +51,7 @@ export function getProvider(id: string): AIProvider {
  *  xai/zai/cloudflare are appended after the established providers rather than inserted ahead of them —
  *  they're newly integrated this session and unproven in production for this app, so fallback priority
  *  is conservative by default. Reorder here if a deployment has reason to prefer one of them. */
-const FALLBACK_ORDER = ['cerebras', 'mistral', 'openrouter', 'openai', 'xai', 'zai', 'cloudflare', 'gemini'];
+const FALLBACK_ORDER = ['vercel-gateway', 'cerebras', 'mistral', 'openrouter', 'openai', 'xai', 'zai', 'cloudflare', 'gemini'];
 
 export function getActiveProvider(settings: AISettings): AIProvider {
   const active = getProvider(settings.activeProviderId);
@@ -156,6 +157,7 @@ export function hasVisionCapableProvider(settings: AISettings, imageMimeTypes?: 
  */
 export const PROVIDER_CATALOG: ProviderMeta[] = [
   { id: 'none', name: 'No provider', status: 'available', description: 'Chat UI works, but responses are not generated.' },
+  { id: 'vercel-gateway', name: 'Vercel AI Gateway', status: 'available', description: 'Managed AI routing with no provider key in the browser.' },
   { id: 'gemini', name: 'Google Gemini', status: geminiProvider.isConfigured({} as AISettings) ? 'available' : 'planned', description: geminiProvider.isConfigured({} as AISettings) ? 'Available.' : 'Not available right now.' },
   { id: 'cerebras', name: 'Cerebras', status: cerebrasProvider.isConfigured({} as AISettings) ? 'available' : 'planned', description: cerebrasProvider.isConfigured({} as AISettings) ? 'Available.' : 'Not available right now.' },
   { id: 'mistral', name: 'Mistral', status: mistralProvider.isConfigured({} as AISettings) ? 'available' : 'planned', description: mistralProvider.isConfigured({} as AISettings) ? 'Available.' : 'Not available right now.' },

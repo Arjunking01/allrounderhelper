@@ -65,7 +65,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-14 grid grid-cols-2 sm:grid-cols-4 gap-10">
         <div className="col-span-2 sm:col-span-1">
           <Link to="/" className="flex items-center gap-2 font-display text-lg font-semibold">
-            <Logo size={36} className="shrink-0" />
+            <Logo size={40} className="shrink-0" />
             ALLROUNDER HELPER
           </Link>
           <p className="mt-3 text-sm text-navy-500 dark:text-ink-500 max-w-xs">

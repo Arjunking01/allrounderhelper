@@ -20,6 +20,7 @@ function resolve(theme: Theme): ResolvedTheme {
 
 function applyResolved(resolved: ResolvedTheme) {
   const root = document.documentElement;
+  if (!root) return;
   if (resolved === 'dark') root.classList.add('dark');
   else root.classList.remove('dark');
 }

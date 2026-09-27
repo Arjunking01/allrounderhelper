@@ -37,7 +37,7 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-navy-100/80 dark:border-white/10 glass">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 gap-3">
         <Link to="/" className="flex items-center gap-2 font-display text-lg font-semibold shrink-0">
-          <Logo size={36} className="shrink-0" />
+          <Logo size={40} className="shrink-0" />
           <span className="hidden sm:inline">
             ALLROUNDER<span className="text-gradient-brand"> HELPER</span>
           </span>
@@ -50,7 +50,7 @@ export function Header() {
               to={link.href}
               className={({ isActive }) =>
                 clsx(
-                  'relative whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
+                  'relative whitespace-nowrap rounded-full px-3 2xl:px-3.5 py-2 text-sm font-medium transition-colors',
                   isActive
                     ? 'text-electric-500'
                     : 'text-navy-600 dark:text-ink-300 hover:text-electric-500'

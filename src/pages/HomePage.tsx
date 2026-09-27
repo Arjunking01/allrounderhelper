@@ -139,7 +139,7 @@ export default function HomePage() {
           "What do you need today?" without a full scroll first. Desktop unchanged. */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 pt-10 sm:pt-24 pb-10 sm:pb-20 text-center">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <Logo size={56} className="mx-auto mb-4 sm:mb-5 h-14! w-14! sm:h-16! sm:w-16! drop-shadow-lg" />
+          <Logo size={56} className="mx-auto mb-4 sm:mb-6 h-14! w-14! sm:h-22! sm:w-22!" />
           <span className="inline-flex items-center gap-1.5 rounded-full border border-navy-200 dark:border-white/10 px-3 py-1 text-xs font-medium text-navy-500 dark:text-ink-400 mb-4 sm:mb-6">
             <Sparkles size={12} className="text-electric-500" /> Built for students, from day one
           </span>
