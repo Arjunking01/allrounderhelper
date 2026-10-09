@@ -88,7 +88,7 @@ export function OnboardingTour() {
         <div className="flex items-start justify-between gap-4">
           {'brand' in slide && slide.brand ? (
             // Welcome slide: the official emblem, not a generic icon. Transparent PNG, so no tile behind it.
-            <Logo size={56} className="shrink-0 drop-shadow-md" />
+            <Logo size={56} className="shrink-0" />
           ) : (
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl gradient-brand text-white shrink-0">
               <slide.icon size={20} />

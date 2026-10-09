@@ -66,9 +66,11 @@ function persist(state: PersistedPrefs) {
   } catch {
     // ignore
   }
-  document.documentElement.classList.toggle('reduce-motion', state.reduceMotion);
-  document.documentElement.style.setProperty('--accent-from', ACCENT_HEX[state.accent].from);
-  document.documentElement.style.setProperty('--accent-to', ACCENT_HEX[state.accent].to);
+  const root = document.documentElement;
+  if (!root) return;
+  root.classList.toggle('reduce-motion', state.reduceMotion);
+  root.style.setProperty('--accent-from', ACCENT_HEX[state.accent].from);
+  root.style.setProperty('--accent-to', ACCENT_HEX[state.accent].to);
 }
 
 const initial = readInitial();

@@ -6,17 +6,16 @@ Regenerates every ALLROUNDER HELPER brand raster from ONE master file.
 
 Outputs
   src/assets/brand/logo-mark.png     256x256  transparent emblem (no wordmark) - header/footer/hero/dashboard/onboarding
-  brand-source/logo-full.png         ~720px   transparent complete lockup (source asset; used to compose the OG cover,
-                                                 not shipped in the bundle - no UI surface renders it large enough)
+  src/assets/brand/logo-full.png     560px    transparent complete lockup - only for surfaces >= ~160px tall (About page)
+  brand-source/logo-full.png         720px    same lockup, source copy used to compose the OG cover
   public/icons/favicon-16|32|48.png           transparent emblem
   public/icons/apple-touch-icon.png  180x180  emblem on brand navy (iOS ignores transparency)
   public/icons/icon-192.png / icon-512.png    transparent emblem, "any" purpose
   public/icons/icon-512-maskable.png 512x512  emblem on solid navy, fully inside the 80% safe-zone circle
   public/icons/og-cover.png          1200x630 social preview
 
-The emblem ("mark") is the master with the wordmark and the two tiny corner glyphs
-retouched out of the orange field so nothing unreadable survives at 16-64px. The
-laptop, the "A" strokes, the gradient and the triangle border are untouched.
+The emblem ("mark") is the master with ONLY the wordmark removed (it is unreadable below
+~200px). Laptop, "A", document/gear glyph, tablet glyph, gradient and border are the master's own pixels.
 
 Usage (from repo root):   python3 brand-source/generate_brand_assets.py
 Needs: pillow, numpy, scipy, opencv-python(-headless)
@@ -100,32 +99,24 @@ def harmonic_fill(img, unknown):
 
 
 def build_mark_rgb(rgb, fg):
-    """Remove the wordmark + corner glyphs from the master. Coordinates are true pixels of
-    the 1217x1217 master (see brand-source/README.md)."""
-    # stay clear of the border ring: it is the only large blue-dominant (b > r) area near the edges
-    blue = (rgb[..., 2] > rgb[..., 0] + 15) & fg
-    lab, n = ndi.label(blue)
-    sizes = ndi.sum(blue, lab, range(1, n + 1))
-    big = np.isin(lab, [i + 1 for i, sz in enumerate(sizes) if sz > 5000])   # ring + blue stripe, not glyph edge pixels
-    ring = ndi.binary_dilation(big, iterations=7)
-    interior = ndi.binary_erosion(fg, iterations=50) & ~ring
-
-    region = np.zeros(rgb.shape[:2], bool)
-    region[978:1090, 80:1140] = True     # "Allrounder Helper" band, full field width
-    region[892:1090, 90:240] = True      # document + gear glyph (bottom-left)
-    region[906:1090, 948:1135] = True    # tablet glyph (bottom-right)
-    region &= interior
+    """Emblem = the original artwork with ONLY the "Allrounder Helper" wordmark removed.
+    The laptop, the A, the light bar, the document/gear glyph, the tablet glyph, the stripes and
+    the border are the master's own pixels, untouched. Only the letter shapes (plus their soft glow)
+    (and the empty orange band they sat in) are re-solved from the surrounding field, so nothing else in the artwork is modified.
+    Coordinates are true pixels of the 1217x1217 master (see brand-source/README.md)."""
+    box = np.zeros(rgb.shape[:2], bool)
+    box[978:1092, 285:935] = True                       # wordmark band, between the two glyphs/stripe feet
+    holes = box                                         # whole band incl. the letters' glow (glow is wider than the letters)
 
     white = rgb.min(axis=2) > 225
-    stripes = ndi.binary_dilation(white, iterations=2) & interior
+    stripes = ndi.binary_dilation(white, iterations=2)  # solved as unknown so white never bleeds into the fill
 
-    # work in a crop around the bottom of the field
-    y0, y1, x0, x1 = 860, 1106, 60, 1160
+    y0, y1, x0, x1 = 950, 1100, 250, 995
     crop = rgb[y0:y1, x0:x1].astype(np.float64)
-    unknown = (region | stripes)[y0:y1, x0:x1]
+    unknown = (holes | stripes)[y0:y1, x0:x1]
     solved = harmonic_fill(crop, unknown)
     out = rgb.copy()
-    write = (region & ~stripes)[y0:y1, x0:x1]         # stripes are restored from the master
+    write = (holes & ~stripes)[y0:y1, x0:x1]            # stripes keep their original pixels
     out[y0:y1, x0:x1][write] = solved[write]
     return out, None
 
@@ -209,6 +200,7 @@ def main():
     icons = ROOT / 'public' / 'icons'
     brand.mkdir(parents=True, exist_ok=True)
     full_out.save(ROOT / 'brand-source' / 'logo-full.png', optimize=True)
+    full.resize((560, round(560 * full.height / full.width)), Image.LANCZOS).save(brand / 'logo-full.png', optimize=True)   # UI copy (About page)
     mark_256.save(brand / 'logo-mark.png', optimize=True)
 
     # favicons: emblem fills the canvas (1px breathing room), transparent

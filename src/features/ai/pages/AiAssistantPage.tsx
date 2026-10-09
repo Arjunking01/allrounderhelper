@@ -293,6 +293,20 @@ export default function AiAssistantPage() {
       return;
     }
 
+    // Refuse before charging or mutating the conversation when the selected attachments
+    // cannot be handled by any configured route. The prompt and files remain in the composer
+    // so the student can remove/convert the file and retry without losing their work.
+    const hasAnyVisionProvider = imagesAttached ? hasVisionCapableProvider(settings) : true;
+    const hasFormatMatchedVisionProvider = imagesAttached ? hasVisionCapableProvider(settings, imageMimeTypes) : true;
+    if (imagesAttached && !hasAnyVisionProvider) {
+      showToast("I can't analyze this image because no connected AI provider supports image input. Remove the image to send the text question, or connect a vision-capable provider.", 'error');
+      return;
+    }
+    if (imagesAttached && !hasFormatMatchedVisionProvider) {
+      showToast("This image format isn't supported by the connected providers. Re-attach it as a JPEG or PNG, or remove it to send the text question.", 'error');
+      return;
+    }
+
     recordMessage();
 
     let id = activeId;
@@ -332,38 +346,6 @@ export default function AiAssistantPage() {
       return;
     }
 
-    // Honest capability check, BEFORE any provider is invoked: if this message carries real
-    // image data (see attachmentsWithImages \u2014 not just "an image was picked", but the
-    // base64 read genuinely finished) and nothing currently configured can actually view an
-    // image \u2014 or, Phase 1.7, nothing configured supports THIS specific format \u2014 say so
-    // plainly right now rather than silently routing to a text-only model and letting it either
-    // ignore the image or claim it "can't see" something the app never attempted to show it.
-    // The image data still isn't sent in this case (see openAICompatibleProvider's vision
-    // guard), but any accompanying text question still goes through normally below.
-    const hasAnyVisionProvider = imagesAttached ? hasVisionCapableProvider(settings) : true;
-    const hasFormatMatchedVisionProvider = imagesAttached ? hasVisionCapableProvider(settings, imageMimeTypes) : true;
-    if (imagesAttached && !hasAnyVisionProvider) {
-      appendMessage(id, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: "I don't have a vision-capable AI provider connected right now, so I can't analyze the image you attached. If there's a text question alongside it, I can still help with that.",
-        createdAt: new Date().toISOString(),
-        isSystemNotice: true,
-      });
-    } else if (imagesAttached && !hasFormatMatchedVisionProvider) {
-      // A vision provider IS connected, but none of them support this exact image format
-      // (see providerRegistry's supportsImageFormats \u2014 e.g. a WebP upload with only xAI
-      // configured, which documents jpg/jpeg + png only). Distinct message from "no vision
-      // provider at all" so the student understands the AI can see images in general, just
-      // not this one, rather than assuming vision is broken entirely.
-      appendMessage(id, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: "The image you attached is in a format the connected AI provider doesn't support (it can view other image types, just not this one), so I can't analyze it. If there's a text question alongside it, I can still help with that, or try re-attaching it as a JPEG or PNG.",
-        createdAt: new Date().toISOString(),
-        isSystemNotice: true,
-      });
-    }
 
     setIsThinking(true);
     setIsGenerating(true);
